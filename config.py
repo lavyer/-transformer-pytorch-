@@ -2,19 +2,30 @@ from pathlib import Path
 
 def get_config():
     return {
-        "batch_size": 8,
-        "num_epochs": 20,
-        "lr": 10**-4,
-        "seq_len": 350,
-        "d_model": 512,
-        "datasource": 'opus_books',
-        "lang_src": "en",
-        "lang_tgt": "it",
+        # ----- Training Config -----
+        "batch_size": 64,             # Batch size
+        "num_epochs": 15,            # Number of epochs
+        "lr": 1.0,                   # Base LR (actual lr comes from warmup formula)
+        "seq_len": 50,               # Max sequence length
+        "max_train_samples": None,   # Use all available data (~30K pairs)
+        # ----- Model Config -----
+        "d_model": 256,              # Embedding dimension
+        "n_heads": 8,                # Number of attention heads
+        "n_layers": 3,               # Number of encoder/decoder layers
+        "d_ff": 1024,                # Feed-forward network dimension
+        "dropout": 0.1,              # Dropout rate
+        "english_vocab_size": 10000, # English vocabulary size cap
+        # ----- Data Config -----
+        "datasource": 'cmn-eng',     # Dataset name
+        "data_dir": 'cmn-eng (1)',   # Data directory
+        "lang_src": "zh",            # Source language: Chinese
+        "lang_tgt": "en",            # Target language: English
+        # ----- File Config -----
         "model_folder": "weights",
         "model_basename": "tmodel_",
-        "preload": "latest",
+        "preload": None,             # Train from scratch
         "tokenizer_file": "tokenizer_{0}.json",
-        "experiment_name": "runs/tmodel"
+        "experiment_name": "runs/tmodel_zh_en_v2"
     }
 
 def get_weights_file_path(config, epoch: str):

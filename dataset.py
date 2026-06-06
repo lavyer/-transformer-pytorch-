@@ -1,13 +1,24 @@
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset
+import re
+
+
+def add_spaces_to_chinese(text: str) -> str:
+    """在中文汉字之间添加空格，使WordLevel tokenizer可以逐字切分中文。"""
+    # 在每个中文字符前后添加空格
+    text = re.sub(r'([一-鿿㐀-䶿])', r' \1 ', text)
+    # 合并多个空格
+    text = re.sub(r'\s+', ' ', text)
+    return text.strip()
 
 
 class BilingualDataset(Dataset):
 
-    def __init__(self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len):
+    def __init__(self, ds, tokenizer_src, tokenizer_tgt, src_lang, tgt_lang, seq_len, char_level_src=False):
         super().__init__()
         self.seq_len = seq_len
+        self.char_level_src = char_level_src
 
         self.ds = ds
         self.tokenizer_src = tokenizer_src
@@ -22,13 +33,19 @@ class BilingualDataset(Dataset):
     def __len__(self):
         return len(self.ds)
 
+    def encode_src(self, text: str):
+        """对源语言文本编码，中文需要逐字切分。"""
+        if self.char_level_src:
+            text = add_spaces_to_chinese(text)
+        return self.tokenizer_src.encode(text).ids
+
     def __getitem__(self, idx):
         src_target_pair = self.ds[idx]
         src_text = src_target_pair['translation'][self.src_lang]
         tgt_text = src_target_pair['translation'][self.tgt_lang]
 
-        # Transform the text into tokens
-        enc_input_tokens = self.tokenizer_src.encode(src_text).ids
+        # Transform the text into tokens (with character-level handling for Chinese)
+        enc_input_tokens = self.encode_src(src_text)
         dec_input_tokens = self.tokenizer_tgt.encode(tgt_text).ids
 
         # Add sos, eos and padding to each sentence
